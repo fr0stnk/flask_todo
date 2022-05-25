@@ -29,6 +29,16 @@ def index():
     except Exception:
         return f'There was an issue adding your task. Exception: {Exception}'
 
+@app.route('/delete/<int:id>')
+def delete(id):
+    task_to_delete = Todo.query.get_or_404(id)
+
+    try:
+        db.session.delete(task_to_delete)
+        db.session.commit()
+        return redirect('/')
+    except Exception:
+        return f'There was an issue adding your task. Exception: {Exception}'
 
 if __name__ == "__main__":
     app.run(debug=True)
