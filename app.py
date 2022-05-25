@@ -29,9 +29,9 @@ def index():
     except Exception:
         return f'There was an issue adding your task. Exception: {Exception}'
 
-@app.route('/delete/<int:id>')
-def delete(id):
-    task_to_delete = Todo.query.get_or_404(id)
+@app.route('/delete/<int:task_id>')
+def delete(task_id):
+    task_to_delete = Todo.query.get_or_404(task_id)
 
     try:
         db.session.delete(task_to_delete)
