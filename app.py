@@ -27,7 +27,7 @@ def index():
         db.session.commit()
         return redirect('/')
     except Exception:
-        return f'There was an issue adding your task. Exception: {Exception}'
+        return 'There was an issue adding your task.'
 
 @app.route('/delete/<int:task_id>')
 def delete(task_id):
@@ -38,7 +38,21 @@ def delete(task_id):
         db.session.commit()
         return redirect('/')
     except Exception:
-        return f'There was an issue adding your task. Exception: {Exception}'
+        return 'There was an issue deleting your task.'
+
+@app.route('/update/<int:task_id>', methods=['GET', 'POST'])
+def update(task_id):
+    task_to_update = Todo.query.get_or_404(task_id)
+    if request.method != 'POST':
+        return render_template('update.html', task=task_to_update)
+    task_to_update.content = request.form['content']
+    try:
+        db.session.commit()
+        return redirect('/')
+    except Exception:
+        return 'There was an issue updating your task.'
+
+    
 
 if __name__ == "__main__":
     app.run(debug=True)
