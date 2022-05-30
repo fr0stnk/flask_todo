@@ -41,43 +41,6 @@ def index():
     except Exception:
         return 'There was an issue adding your task.'
 
-@app.route('/get', methods=['GET'])
-def get():
-    """Get all tasks
-    @return: 200: an array of all tasks
-    """
-    tasks_raw = Todo.query.order_by(Todo.date_created).all()
-    tasks = [task.to_dict() for task in tasks_raw]
-    return jsonify(tasks)
-
-@app.route('/add', methods=['POST'])
-def add():
-    """Add a new task
-    @param task_description: post : Data for task description
-    @return: 200: New task added
-    @raise 400: Bad request
-    """
-    if not request.get_json():
-        app.logger.debug('Problems with json')
-        abort(400)
-    
-    data = request.get_json(force=True)
-
-    if not data.get('task_description'):
-        app.logger.debug('No task description provided')
-        return jsonify({'message': 'No task description found'}), 400
-
-    task_description = data.get('task_description')
-
-    new_task = Todo(content=task_description)
-
-    try:
-        db.session.add(new_task)
-        db.session.commit()
-        return jsonify({}, 200)
-    except Exception:
-        return 'There was an issue adding your task.'
-
 @app.route('/delete/<int:task_id>')
 def delete(task_id):
     """
@@ -135,7 +98,42 @@ def update(task_id):
     except Exception:
         return 'There was an issue updating your task.'
 
+@app.route('/get', methods=['GET'])
+def api_get():
+    """Get all tasks
+    @return: 200: an array of all tasks
+    """
+    tasks_raw = Todo.query.order_by(Todo.date_created).all()
+    tasks = [task.to_dict() for task in tasks_raw]
+    return jsonify(tasks)
+
+@app.route('/add', methods=['POST'])
+def api_add():
+    """Add a new task
+    @param task_description: post : Data for task description
+    @return: 200: New task added
+    @raise 400: Bad request
+    """
+    if not request.get_json():
+        app.logger.debug('Problems with json')
+        abort(400)
     
+    data = request.get_json(force=True)
+
+    if not data.get('task_description'):
+        app.logger.debug('No task description provided')
+        return jsonify({'message': 'No task description found'}), 400
+
+    task_description = data.get('task_description')
+
+    new_task = Todo(content=task_description)
+
+    try:
+        db.session.add(new_task)
+        db.session.commit()
+        return jsonify({}, 200)
+    except Exception:
+        return 'There was an issue adding your task.'
 
 if __name__ == "__main__":
     app.run(debug=True)
