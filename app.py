@@ -98,7 +98,7 @@ def update(task_id):
     except Exception:
         return 'There was an issue updating your task.'
 
-@app.route('/get', methods=['GET'])
+@app.route('/api/get', methods=['GET'])
 def api_get():
     """Get all tasks
     @return: 200: an array of all tasks
@@ -107,7 +107,7 @@ def api_get():
     tasks = [task.to_dict() for task in tasks_raw]
     return jsonify(tasks)
 
-@app.route('/add', methods=['POST'])
+@app.route('/api/add', methods=['POST'])
 def api_add():
     """Add a new task
     @param task_description: post : Data for task description
@@ -134,6 +134,40 @@ def api_add():
         return jsonify({}, 200)
     except Exception:
         return 'There was an issue adding your task.'
+
+@app.route('/api/update', methods=['POST'])
+def api_update():
+    """Update a task
+    @param task_id: post : The ID of the task to update
+    @param task_description: post : Data for task description
+    @return: 200: Task updated
+    @raise 400: Bad request
+    """
+    if not request.get_json():
+        app.logger.debug('Problems with json')
+        abort(400)
+    
+    data = request.get_json(force=True)
+
+    if not data.get('task_id'):
+        app.logger.debug('No task id provided')
+        return jsonify({'message': 'No task id found'}), 400
+
+    task_id = data.get('task_id')
+
+    task_to_update = Todo.query.get_or_404(task_id)
+
+    if not data.get('task_description'):
+        app.logger.debug('No task description provided')
+        return jsonify({'message': 'No task description found'}), 400
+
+    task_to_update.content = data.get('task_description')
+
+    try:
+        db.session.commit()
+        return jsonify({}, 200)
+    except Exception:
+        return 'There was an issue updating your task.'
 
 if __name__ == "__main__":
     app.run(debug=True)
