@@ -1,10 +1,39 @@
 from flask import Flask, redirect, render_template, request, jsonify, abort
-from flask_swagger import swagger
+from flasgger import Swagger
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
 from datetime import datetime
 
 app = Flask(__name__)
+
+app.config['SWAGGER'] = {
+    'swagger': '2.0',
+    'info': {
+        'title': 'Todo API',
+        'description': 'A simple Todo API',
+        'version': '1.0.0'
+    },
+    'basepath': '/api'
+}
+
+swagger_config = {
+    "headers": [
+    ],
+    "specs": [
+        {
+            "endpoint": 'apispec_1',
+            "route": '/apispec_1.json',
+            "rule_filter": lambda rule: True,  # all in
+            "model_filter": lambda tag: True,  # all in
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/swagger/"
+}
+
+swagger = Swagger(app, config=swagger_config)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.sqlite'
 db = SQLAlchemy(app)
 
@@ -17,14 +46,9 @@ class Todo(db.Model, SerializerMixin):
         return '<Task %r>' % self.task_id
 
 
-@app.route("/spec")
+@app.route("/swagger")
 def spec():
-    swag = swagger(app)
-    swag['swagger'] = '2.0'
-    swag['info']['version'] = "1.0"
-    swag['info']['title'] = "Todo API"
-
-    return jsonify(swag)
+    return swagger
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -43,23 +67,7 @@ def index():
 
 @app.route('/delete/<int:task_id>')
 def delete(task_id):
-    """
-    Delete a task
-    ---
-    tags:
-      - delete
-    parameters:
-        - name: task_id
-          in: path
-          description: The ID of the task to delete
-          required: true
-          type: integer
-    responses:
-        200:
-            description: The task was deleted
-        404:
-            description: The task was not found
-    """
+    
     task_to_delete = Todo.query.get_or_404(task_id)
 
     try:
@@ -71,23 +79,7 @@ def delete(task_id):
 
 @app.route('/update/<int:task_id>', methods=['GET', 'POST'])
 def update(task_id):
-    """
-    Update a task
-    ---
-    tags:
-      - update
-    parameters:
-        - name: task_id
-          in: path
-          description: The ID of the task to update
-          required: true
-          type: integer
-    responses:
-        200:
-            description: The task was updated
-        404:
-            description: The task was not found
-    """
+    
     task_to_update = Todo.query.get_or_404(task_id)
     if request.method == 'GET':
         return render_template('update.html', task=task_to_update)
@@ -100,8 +92,32 @@ def update(task_id):
 
 @app.route('/api/get', methods=['GET'])
 def api_get():
-    """Get all tasks
-    @return: 200: an array of all tasks
+    """
+    Get a list with tasks objects
+    ---
+    tags:
+      - Get Tasks
+    definitions:
+        Task:
+          type: object
+          properties:
+            content:
+              type: string
+            date_created:
+              type: string
+            task_id:
+              type: integer 
+    responses:
+        200:
+            description: A list of all tasks
+            schema:
+              id: Task
+              type: object
+              properies:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/definitions/Task'
     """
     tasks_raw = Todo.query.order_by(Todo.date_created).all()
     tasks = [task.to_dict() for task in tasks_raw]
@@ -109,10 +125,25 @@ def api_get():
 
 @app.route('/api/add', methods=['POST'])
 def api_add():
-    """Add a new task
-    @param task_description: post : Data for task description
-    @return: 200: New task added
-    @raise 400: Bad request
+    """
+    Add a task
+    ---
+    tags:
+      - Add Task
+    parameters:
+        - in: body
+          schema:
+            properties:
+              task_description:
+                description: The new task description
+                required: true
+                type: string
+                example: New task description
+    responses:
+        204:
+            description: The task was added
+        404:
+            description: The task was not found
     """
     if not request.get_json():
         app.logger.debug('Problems with json')
@@ -131,17 +162,36 @@ def api_add():
     try:
         db.session.add(new_task)
         db.session.commit()
-        return jsonify({}, 200)
+        return jsonify({}), 204
     except Exception:
         return 'There was an issue adding your task.'
 
 @app.route('/api/update', methods=['POST'])
 def api_update():
-    """Update a task
-    @param task_id: post : The ID of the task to update
-    @param task_description: post : Data for task description
-    @return: 200: Task updated
-    @raise 400: Bad request
+    """
+    Update a task
+    ---
+    tags:
+      - Update Task
+    parameters:
+        - in: body
+          schema:
+            properties:
+              task_id:
+                description: The ID of the task to update
+                required: true
+                type: integer
+                example: 1
+              task_description:
+                description: The new task description
+                required: true
+                type: string
+                example: New task description
+    responses:
+        204:
+            description: The task was updated
+        404:
+            description: The task was not found
     """
     if not request.get_json():
         app.logger.debug('Problems with json')
@@ -165,16 +215,28 @@ def api_update():
 
     try:
         db.session.commit()
-        return jsonify({}, 200)
+        return jsonify({}), 204
     except Exception:
         return 'There was an issue updating your task.'
 
 @app.route('/api/delete/<int:task_id>', methods=['DELETE'])
 def api_delete(task_id):
-    """Delete a task
-    @param task_id: post : The ID of the task to delete
-    @return: 200: Task deleted
-    @raise 400: Bad request
+    """
+    Delete a task
+    ---
+    tags:
+      - Delete Task
+    parameters:
+        - name: task_id
+          in: path
+          description: The ID of the task to delete
+          required: true
+          type: integer
+    responses:
+        200:
+            description: The task was deleted
+        404:
+            description: The task was not found
     """
 
     task_to_delete = Todo.query.get_or_404(task_id)
@@ -182,7 +244,7 @@ def api_delete(task_id):
     try:
         db.session.delete(task_to_delete)
         db.session.commit()
-        return jsonify({}, 200)
+        return jsonify({})
     except Exception:
         return 'There was an issue deleting your task.'
 
