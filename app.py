@@ -120,7 +120,7 @@ def api_add():
     
     data = request.get_json(force=True)
 
-    if not data.get('task_description'):
+    if not data.get('task_description') and isinstance(data.get('task_description'), str):
         app.logger.debug('No task description provided')
         return jsonify({'message': 'No task description found'}), 400
 
@@ -149,7 +149,7 @@ def api_update():
     
     data = request.get_json(force=True)
 
-    if not data.get('task_id'):
+    if not data.get('task_id') and isinstance(data.get('task_id'), int):
         app.logger.debug('No task id provided')
         return jsonify({'message': 'No task id found'}), 400
 
@@ -157,7 +157,7 @@ def api_update():
 
     task_to_update = Todo.query.get_or_404(task_id)
 
-    if not data.get('task_description'):
+    if not data.get('task_description') and isinstance(data.get('task_description'), str):
         app.logger.debug('No task description provided')
         return jsonify({'message': 'No task description found'}), 400
 
@@ -168,6 +168,23 @@ def api_update():
         return jsonify({}, 200)
     except Exception:
         return 'There was an issue updating your task.'
+
+@app.route('/api/delete/<int:task_id>', methods=['DELETE'])
+def api_delete(task_id):
+    """Delete a task
+    @param task_id: post : The ID of the task to delete
+    @return: 200: Task deleted
+    @raise 400: Bad request
+    """
+
+    task_to_delete = Todo.query.get_or_404(task_id)
+
+    try:
+        db.session.delete(task_to_delete)
+        db.session.commit()
+        return jsonify({}, 200)
+    except Exception:
+        return 'There was an issue deleting your task.'
 
 if __name__ == "__main__":
     app.run(debug=True)
