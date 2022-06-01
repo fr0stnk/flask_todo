@@ -257,5 +257,5 @@ if __name__ == "__main__":
         if sys.argv[1] == 'dev':
             app.run(debug=True)
         elif sys.argv[1] == 'prod':
-            serve(app, host='0.0.0.0', port=8080, url_scheme = 'https')
+            serve(app, port=8080, url_scheme = 'https')
     app.run(debug=True)
