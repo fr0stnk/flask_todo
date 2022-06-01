@@ -3,6 +3,8 @@ from flasgger import Swagger
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
 from datetime import datetime
+import sys
+from waitress import serve
 
 app = Flask(__name__)
 
@@ -251,4 +253,9 @@ def api_delete(task_id):
         return 'There was an issue deleting your task.'
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'dev':
+            app.run(debug=True)
+        elif sys.argv[1] == 'prod':
+            serve(app, host='0.0.0.0', port=8080, url_scheme = 'https')
     app.run(debug=True)
