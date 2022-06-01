@@ -132,13 +132,14 @@ def api_add():
       - Add Task
     parameters:
         - in: body
+          name: body
           schema:
             properties:
               task_description:
                 description: The new task description
                 required: true
                 type: string
-                example: New task description
+                default: New task description
     responses:
         204:
             description: The task was added
@@ -175,18 +176,19 @@ def api_update():
       - Update Task
     parameters:
         - in: body
+          name: body
           schema:
             properties:
               task_id:
                 description: The ID of the task to update
                 required: true
                 type: integer
-                example: 1
+                default: 1
               task_description:
                 description: The new task description
                 required: true
                 type: string
-                example: New task description
+                default: New task description
     responses:
         204:
             description: The task was updated
